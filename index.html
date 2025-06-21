@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Kendaraan NEO</title>
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#18181b" media="(prefers-color-scheme: dark)">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="NEO LOGO.png">
+	<link rel="icon" type="image/x-icon" href="/icon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Light Mode (Default) */
+        :root {
+            --bg-color: #f4f4f5; --text-color-primary: #18181b; --text-color-secondary: #71717a;
+            --panel-bg: white; --panel-border: #e4e4e7; --card-bg: #fafafa;
+            --btn-primary-bg: #18181b; --btn-primary-text: white;
+            --btn-secondary-bg: white; --btn-secondary-text: #3f3f46; --btn-secondary-hover-bg: #f4f4f5;
+            --input-bg: #fafafa; --input-border: #d4d4d8;
+            --table-header-bg: #fafafa; --table-row-hover-bg: #f4f4f5;
+        }
+
+        /* Dark Mode */
+        .dark {
+            --bg-color: #121212; --text-color-primary: #e4e7eb; --text-color-secondary: #a1a1aa;
+            --panel-bg: #1e1e1e; --panel-border: #333; --card-bg: #2a2a2a;
+            --btn-primary-bg: #fafafa; --btn-primary-text: #18181b;
+            --btn-secondary-bg: #333; --btn-secondary-text: #e4e7eb; --btn-secondary-hover-bg: #444;
+            --input-bg: #2a2a2a; --input-border: #444;
+            --table-header-bg: #2a2a2a; --table-row-hover-bg: #2e2e2e;
+        }
+
+        /* Pastel Theme */
+        .theme-pastel {
+            --bg-color: #FFF2EB; --text-color-primary: #5D4037; --text-color-secondary: #8D6E63;
+            --panel-bg: #ffffff; --panel-border: #FFD6BA; --card-bg: #FFE8CD;
+            --btn-primary-bg: #5D4037; --btn-primary-text: white;
+            --btn-secondary-bg: #FFE8CD; --btn-secondary-text: #5D4037; --btn-secondary-hover-bg: #FFD6BA;
+            --input-bg: #FFFAFA; --input-border: #FFD6BA;
+            --table-header-bg: #FFE8CD; --table-row-hover-bg: #FFF2EB;
+        }
+        
+        body { background-color: var(--bg-color); color: var(--text-color-primary); font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .panel { background-color: var(--panel-bg); border-radius: 0.5rem; border: 1px solid var(--panel-border); transition: background-color 0.3s, border-color 0.3s; }
+        .modal, .modal-overlay { transition: opacity 0.3s ease, visibility 0.3s ease; z-index: 100; }
+        .modal { transform: translateY(-20px); transition: opacity 0.3s ease, transform 0.3s ease; color: var(--text-color-primary); }
+        .modal.is-visible { opacity: 1; transform: translateY(0); }
+        .vehicle-tab { padding: 0.75rem 1rem; font-size: 0.875rem; cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.2s ease, border-color 0.2s ease; color: var(--text-color-secondary); font-weight: 500; }
+        .vehicle-tab:hover { color: var(--text-color-primary); }
+        .vehicle-tab.selected { color: var(--text-color-primary); border-bottom-color: var(--text-color-primary); font-weight: 600; }
+        .stat-card { background-color: var(--card-bg); color: var(--text-color-primary); border-radius: 0.5rem; padding: 1.25rem; border: 1px solid var(--panel-border); text-align: center; }
+        .stat-card h4 { font-size: 0.75rem; font-weight: 500; color: var(--text-color-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-card p { font-size: 1.5rem; font-weight: 700; color: var(--text-color-primary); margin-top: 0.25rem; }
+        .btn { padding: 0.5rem 1.25rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.875rem; transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s; border: 1px solid var(--input-border); display: flex; align-items: center; height: 38px; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-primary { background-color: var(--btn-primary-bg); color: var(--btn-primary-text); border-color: var(--btn-primary-bg); }
+        .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+        .btn-secondary { background-color: var(--btn-secondary-bg); color: var(--btn-secondary-text); }
+        .btn-secondary:hover { background-color: var(--btn-secondary-hover-bg); }
+        .btn-danger { background-color: #dc2626; color: white; border-color: #dc2626; }
+        .btn-danger:hover { background-color: #b91c1c; }
+        .btn-input-group { display: flex; align-items: center; height: 38px; padding: 0.25rem; gap: 0.25rem; background-color: var(--card-bg); border-color: var(--panel-border) }
+        .btn-input-group button { padding: 0.25rem 0.5rem; font-size: 0.8rem; height: 30px; border-radius: 0.25rem; }
+        #toast { position: fixed; bottom: 20px; right: 20px; background-color: #27272a; color: white; padding: 15px; border-radius: 5px; z-index: 1000; opacity: 0; transition: opacity 0.5s; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+        #toast.show { opacity: 1; }
+        input[type="date"], input[type="text"], input[type="number"] { background-color: var(--input-bg); border: 1px solid var(--input-border); border-radius: 0.375rem; color: var(--text-color-primary); }
+        input:focus { outline: 2px solid var(--text-color-secondary); outline-offset: 2px; }
+        .dropdown-menu { position: absolute; right: 0; background-color: var(--panel-bg); min-width: 200px; border: 1px solid var(--panel-border); border-radius: 0.375rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); z-index: 10; margin-top: 0.5rem; }
+        .dropdown-item { display: block; width: 100%; padding: 0.6rem 1rem; text-align: left; font-size: 0.875rem; color: var(--btn-secondary-text); cursor: pointer; }
+        .dropdown-item:hover { background-color: var(--btn-secondary-hover-bg); }
+        .dropdown-item:not(:last-child) { border-bottom: 1px solid var(--panel-border); }
+        .theme-toggle-btn { background: none; border: none; cursor: pointer; color: var(--text-color-secondary); padding: 0.5rem; border-radius: 0.375rem; }
+        .theme-toggle-btn:hover { color: var(--text-color-primary); background-color: var(--btn-secondary-hover-bg); }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="main-dashboard" class="max-w-7xl mx-auto p-4 sm:p-6"></div>
+    
+    <div id="data-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 invisible opacity-0">
+        <div class="modal panel w-full max-w-lg opacity-0">
+            <div class="p-5 border-b" style="border-color: var(--panel-border);"><h3 id="modal-title" class="text-lg font-medium">Data Riwayat</h3></div>
+            <form id="data-form" class="p-6 space-y-4">
+                <input type="hidden" id="record-id"><input type="hidden" id="driver-id-hidden"><input type="hidden" id="vehicle-plate-hidden"><input type="hidden" id="fuel-type-hidden">
+                <div><label for="date" class="block text-sm font-medium">Tanggal</label><input type="date" id="date" required class="mt-1 block w-full px-3 py-2 shadow-sm"></div>
+                <div id="modal-fuel-group" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label for="kilometer" class="block text-sm font-medium">Kilometer</label><input type="number" step="0.1" id="kilometer" class="mt-1 block w-full px-3 py-2 shadow-sm"></div>
+                        <div><label for="fuel_cost" class="block text-sm font-medium">Biaya Bahan Bakar (Rp)</label><input type="number" id="fuel_cost" class="mt-1 block w-full px-3 py-2 shadow-sm"></div>
+                    </div>
+                </div>
+                <div id="modal-service-group" class="space-y-4">
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label for="service_cost" class="block text-sm font-medium">Biaya Servis (Rp)</label><input type="number" id="service_cost" class="mt-1 block w-full px-3 py-2 shadow-sm"></div>
+                        <div><label for="service_type" class="block text-sm font-medium">Jenis Servis / Keterangan</label><input type="text" id="service_type" class="mt-1 block w-full px-3 py-2 shadow-sm"></div>
+                    </div>
+                </div>
+                <div id="modal-load-group" class="space-y-4 border-t pt-4" style="border-color: var(--panel-border);">
+                    <h4 class="text-md font-medium">Detail Muatan</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label for="granit" class="block text-sm font-medium">Muatan Granit (dus)</label><input type="number" id="granit" class="mt-1 block w-full px-3 py-2 shadow-sm"></div>
+                        <div><label for="keramik" class="block text-sm font-medium">Muatan Keramik (dus)</label><input type="number" id="keramik" class="mt-1 block w-full px-3 py-2 shadow-sm"></div>
+                    </div>
+                </div>
+                <div id="form-error" class="text-red-600 text-sm hidden"></div>
+                <div class="pt-4 flex justify-end space-x-3 border-t mt-6" style="border-color: var(--panel-border);">
+                    <button type="button" id="modal-close-btn" class="btn btn-secondary">Batal</button>
+                    <button type="submit" id="form-submit-btn" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="restore-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 invisible opacity-0">
+        <div class="modal panel w-full max-w-lg opacity-0">
+            <div class="p-5 border-b flex justify-between items-center" style="border-color: var(--panel-border);"><h3 class="text-lg font-medium">Restore Database</h3><button id="restore-modal-close-btn" class="text-zinc-400 hover:text-zinc-600">&times;</button></div>
+            <div class="p-6 space-y-4">
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4" role="alert"><p class="font-bold">Peringatan!</p><p>Proses ini akan menimpa seluruh data. Disarankan menjalankan skrip migrasi setelah restore jika menggunakan backup lama.</p></div>
+                <div><label class="block text-sm font-medium">Upload File Backup (.db)</label><input type="file" id="backup-file-input" accept=".db" class="mt-1 block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-zinc-100 file:text-zinc-800 hover:file:bg-zinc-200"/></div>
+                <div id="restore-error" class="text-red-600 text-sm hidden"></div>
+                <div class="pt-4 flex justify-end space-x-3 border-t mt-6" style="border-color: var(--panel-border);">
+                    <button type="button" id="restore-cancel-btn" class="btn btn-secondary">Batal</button>
+                    <button type="button" id="restore-submit-btn" class="btn btn-danger">Restore Sekarang</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="driver-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 invisible opacity-0">
+        <div class="modal panel w-full max-w-4xl opacity-0">
+            <div class="p-5 border-b flex justify-between items-center" style="border-color: var(--panel-border);"><h3 class="text-lg font-medium">Edit Data Driver</h3><button id="driver-modal-close-btn" class="text-zinc-400 hover:text-zinc-600 text-2xl font-bold">&times;</button></div>
+            <form id="driver-form" class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div id="driver-list-container" class="space-y-3"></div>
+                <div id="driver-form-error" class="text-red-600 text-sm hidden"></div>
+                <div class="pt-4 flex justify-between items-center border-t mt-6" style="border-color: var(--panel-border);">
+                     <button type="button" id="add-driver-row-btn" class="btn btn-secondary">Tambah Driver</button>
+                     <div>
+                        <button type="button" id="driver-modal-cancel-btn" class="btn btn-secondary mr-2">Batal</button>
+                        <button type="submit" id="driver-form-submit-btn" class="btn btn-primary">Simpan Perubahan</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const API_BASE_URL = ''; // <-- PERUBAHAN DI SINI
+        const mainDashboard = document.getElementById('main-dashboard');
+        const toast = document.getElementById('toast');
+        const dataModal = document.getElementById('data-modal');
+        const dataForm = document.getElementById('data-form');
+        const driverModal = document.getElementById('driver-modal');
+        const driverForm = document.getElementById('driver-form');
+        const driverListContainer = document.getElementById('driver-list-container');
+        
+        let allVehicles = [];
+        let currentVehicle = null;
+
+        function showToast(message, isError = false) { toast.textContent = message; toast.style.backgroundColor = isError ? '#dc2626' : '#16a34a'; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
+
+        async function simpleFetch(url, options = {}) {
+            if (options.body && !(options.body instanceof FormData)) { options.headers = { ...options.headers, 'Content-Type': 'application/json' }; }
+            try { return await fetch(url, options); } catch (error) { throw error; }
+        }
+        
+        function renderVehicleTabs() {
+            const vehicleTabsContainer = document.getElementById('vehicle-tabs');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            vehicleTabsContainer.innerHTML = '';
+            allVehicles.forEach(vehicle => {
+                const tab = document.createElement('button');
+                tab.className = 'vehicle-tab';
+                tab.textContent = vehicle.name;
+                tab.dataset.id = vehicle.id;
+                tab.addEventListener('click', () => handleTabClick(tab, vehicle));
+                vehicleTabsContainer.appendChild(tab);
+            });
+        }
+
+        async function fetchVehicles() {
+            try {
+                const response = await simpleFetch(`${API_BASE_URL}/api/vehicles`);
+                if (!response.ok) throw new Error("Gagal mengambil daftar kendaraan dari server.");
+                const data = await response.json();
+                allVehicles = data.vehicles;
+                renderVehicleTabs();
+                if (allVehicles.length > 0) { document.querySelector('.vehicle-tab').click(); }
+            } catch (error) {
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if(loadingIndicator) loadingIndicator.innerHTML = `<p class="text-red-500 text-center p-4">Error: ${error.message}<br>Pastikan server backend berjalan dan database sudah benar.</p>`;
+                showToast(error.message, true);
+            }
+        }
+
+        function handleTabClick(tabElement, vehicle) {
+            document.querySelectorAll('.vehicle-tab').forEach(t => t.classList.remove('selected'));
+            tabElement.classList.add('selected');
+            currentVehicle = vehicle;
+            renderDashboardPanels(vehicle);
+        }
+
+        function renderDashboardPanels(vehicle) {
+            const detailsContainer = document.getElementById('details-container');
+            detailsContainer.innerHTML = `
+                <div class="mb-6 p-6 panel">
+                    <div class="flex flex-wrap justify-between items-start gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold">${vehicle.name}</h2>
+                            <p class="font-mono text-zinc-500 dark:text-zinc-400 text-sm">${vehicle.plate} - ${vehicle.Jenis}</p>
+                        </div>
+                        <div class="flex-grow flex flex-col items-end gap-4">
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-2">
+                                    <label for="start_date" class="text-sm font-medium">Dari:</label>
+                                    <input type="date" id="start_date" class="text-sm p-2 shadow-sm">
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label for="end_date" class="text-sm font-medium">Sampai:</label>
+                                    <input type="date" id="end_date" class="text-sm p-2 shadow-sm">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="stats-panel" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6"></div>
+                <div class="space-y-6">
+                    <div class="panel"><h3 class="text-lg font-semibold text-center p-4 border-b" style="border-color: var(--panel-border);">Riwayat BBM</h3><div id="fuel-history-table-container" class="p-2"></div></div>
+                    <div class="panel"><h3 class="text-lg font-semibold text-center p-4 border-b" style="border-color: var(--panel-border);">Riwayat Servis</h3><div id="service-history-table-container" class="p-2"></div></div>
+                    <div class="panel"><h3 class="text-lg font-semibold text-center p-4 border-b" style="border-color: var(--panel-border);">Riwayat Muatan</h3><div id="load-history-table-container" class="p-2"></div></div>
+                </div>
+            `;
+            
+            document.getElementById('start_date').addEventListener('change', () => refreshHistoryData(vehicle));
+            document.getElementById('end_date').addEventListener('change', () => refreshHistoryData(vehicle));
+            
+            const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            document.getElementById('start_date').value = firstDayOfMonth.toISOString().split('T')[0];
+            document.getElementById('end_date').value = today.toISOString().split('T')[0];
+            refreshHistoryData(vehicle);
+        }
+
+        async function refreshHistoryData(vehicle) {
+            const fuelContainer = document.getElementById('fuel-history-table-container');
+            const serviceContainer = document.getElementById('service-history-table-container');
+            const loadContainer = document.getElementById('load-history-table-container');
+            const placeholder = `<div class="text-center p-8 text-zinc-500">Memuat data...</div>`;
+            fuelContainer.innerHTML = placeholder; serviceContainer.innerHTML = placeholder; loadContainer.innerHTML = placeholder;
+            
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+            
+            try {
+                const [dataRes, statsRes] = await Promise.all([
+                    simpleFetch(`${API_BASE_URL}/api/drivers/${vehicle.id}/data?start_date=${startDate}&end_date=${endDate}`),
+                    simpleFetch(`${API_BASE_URL}/api/drivers/${vehicle.id}/stats?start_date=${startDate}&end_date=${endDate}`)
+                ]);
+
+                if (!dataRes.ok || !statsRes.ok) throw new Error('Gagal mengambil data riwayat.');
+                
+                const data = await dataRes.json();
+                const stats = await statsRes.json();
+                
+                displayHistoryData(data, vehicle);
+                updateStatsPanel(stats);
+            } catch (error) {
+                const errorMsg = `<p class="text-red-500 text-center p-4">Error: ${error.message}</p>`;
+                fuelContainer.innerHTML = errorMsg; 
+                serviceContainer.innerHTML = errorMsg; 
+                loadContainer.innerHTML = errorMsg;
+            }
+        }
+
+        function updateStatsPanel(stats) {
+            const formatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
+            const statsPanel = document.getElementById('stats-panel');
+            if (statsPanel) {
+                statsPanel.innerHTML = `
+                    <div class="stat-card"><h4>Total Biaya</h4><p>${formatter.format(stats.total_cost)}</p></div>
+                    <div class="stat-card"><h4>Biaya Servis</h4><p>${formatter.format(stats.total_service_cost)}</p></div>
+                    <div class="stat-card"><h4>Total Jarak (KM)</h4><p>${stats.total_distance.toLocaleString('id-ID')}</p></div>
+                    <div class="stat-card"><h4>Konsumsi (Rp/KM)</h4><p>${formatter.format(stats.avg_consumption)}</p></div>
+                    <div class="stat-card"><h4>Total Liter</h4><p>${stats.total_liters.toLocaleString('id-ID', {minimumFractionDigits: 1, maximumFractionDigits: 1})} L</p></div>
+                `;
+            }
+        }
+
+        function displayHistoryData(records, vehicle) {
+            const fuelContainer = document.getElementById('fuel-history-table-container');
+            const serviceContainer = document.getElementById('service-history-table-container');
+            const loadContainer = document.getElementById('load-history-table-container');
+            const formatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
+
+            const bbmRecords = records.filter(r => r.fuel_cost > 0 || r.kilometer > 0);
+            const serviceRecords = records.filter(r => r.service_cost > 0 || (r.service_type && r.service_type.trim() !== ''));
+            const loadRecords = records.filter(r => r.granit > 0 || r.keramik > 0);
+            
+            const noDataMsg = (type) => `<p class="text-center text-zinc-500 py-8">Tidak ada data ${type}.</p>`;
+            const createTable = (headers, rows) => `<div class="overflow-x-auto"><table class="w-full text-left">${headers}<tbody>${rows}</tbody></table></div>`;
+            const createActionButtons = (id) => `<td class="p-3 text-sm text-right w-24"><button class="edit-btn p-1 rounded-full hover:bg-[var(--table-row-hover-bg)]" data-id="${id}"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-zinc-600 dark:text-zinc-300" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button><button class="delete-btn p-1 rounded-full hover:bg-[var(--table-row-hover-bg)]" data-id="${id}"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-600" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button></td>`;
+            
+            const headerStyle = `style="background-color: var(--table-header-bg); border-color: var(--panel-border);"`;
+            
+            // Tabel Riwayat BBM
+            if (bbmRecords.length === 0) { fuelContainer.innerHTML = noDataMsg('BBM'); } 
+            else {
+                const headers = `<thead ${headerStyle}><tr class="text-[var(--text-color-secondary)]"><th class="p-3 text-left text-xs font-semibold uppercase w-1/3">Tanggal</th><th class="p-3 text-left text-xs font-semibold uppercase w-1/3">Kilometer</th><th class="p-3 text-left text-xs font-semibold uppercase w-1/3">Biaya BBM</th><th class="p-3 text-right text-xs font-semibold uppercase w-24">Aksi</th></tr></thead>`;
+                const rows = bbmRecords.map(r => `
+                    <tr class="border-b hover:bg-[var(--table-row-hover-bg)]" style="border-color: var(--panel-border);">
+                        <td class="p-3 text-sm text-left">${new Date(r.date + 'T00:00:00').toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'})}</td>
+                        <td class="p-3 text-sm text-left">${r.kilometer.toLocaleString('id-ID')} KM</td>
+                        <td class="p-3 text-sm text-left">${formatter.format(r.fuel_cost)}</td>
+                        ${createActionButtons(r.id)}
+                    </tr>`).join('');
+                fuelContainer.innerHTML = createTable(headers, rows);
+            }
+
+            // Tabel Riwayat Servis
+            if (serviceRecords.length === 0) { serviceContainer.innerHTML = noDataMsg('servis'); }
+            else {
+                const headers = `<thead ${headerStyle}><tr class="text-[var(--text-color-secondary)]"><th class="p-3 text-left text-xs font-semibold uppercase w-1/4">Tanggal</th><th class="p-3 text-left text-xs font-semibold uppercase w-2/4">Jenis Servis</th><th class="p-3 text-left text-xs font-semibold uppercase w-1/4">Biaya</th><th class="p-3 text-right text-xs font-semibold uppercase w-24">Aksi</th></tr></thead>`;
+                const rows = serviceRecords.map(r => `
+                    <tr class="border-b hover:bg-[var(--table-row-hover-bg)]" style="border-color: var(--panel-border);">
+                        <td class="p-3 text-sm text-left">${new Date(r.date + 'T00:00:00').toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'})}</td>
+                        <td class="p-3 text-sm text-left">${r.service_type || '-'}</td>
+                        <td class="p-3 text-sm text-left">${formatter.format(r.service_cost)}</td>
+                        ${createActionButtons(r.id)}
+                    </tr>`).join('');
+                serviceContainer.innerHTML = createTable(headers, rows);
+            }
+
+            // Tabel Riwayat Muatan
+            if (loadRecords.length === 0) { loadContainer.innerHTML = noDataMsg('muatan'); }
+            else {
+                const headers = `<thead ${headerStyle}><tr class="text-[var(--text-color-secondary)]"><th class="p-3 text-left text-xs font-semibold uppercase w-2/5">Tanggal</th><th class="p-3 text-left text-xs font-semibold uppercase w-1/5">Granit</th><th class="p-3 text-left text-xs font-semibold uppercase w-1/5">Keramik</th><th class="p-3 text-left text-xs font-semibold uppercase w-1/5">Point</th><th class="p-3 text-right text-xs font-semibold uppercase w-24">Aksi</th></tr></thead>`;
+                const rows = loadRecords.map(r => {
+                    const dailyTarget = 175;
+                    const dailyLoad = (parseFloat(r.granit) * 1.5) + parseFloat(r.keramik);
+                    const point = dailyTarget > 0 ? dailyLoad / dailyTarget : 0;
+                    return `
+                        <tr class="border-b hover:bg-[var(--table-row-hover-bg)]" style="border-color: var(--panel-border);">
+                            <td class="p-3 text-sm text-left">${new Date(r.date + 'T00:00:00').toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'})}</td>
+                            <td class="p-3 text-sm text-left">${r.granit.toLocaleString('id-ID')}</td>
+                            <td class="p-3 text-sm text-left">${r.keramik.toLocaleString('id-ID')}</td>
+                            <td class="p-3 text-sm text-left">${point.toFixed(2)}</td>
+                            ${createActionButtons(r.id)}
+                        </tr>`;
+                }).join('');
+                loadContainer.innerHTML = createTable(headers, rows);
+            }
+
+            document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', () => {
+                const record = records.find(r => r.id == btn.dataset.id);
+                if(record) openDataModal('edit', record);
+            }));
+            document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => deleteRecord(btn.dataset.id, vehicle)));
+        }
+        
+        async function deleteRecord(id, vehicle) { if (!confirm('Anda yakin ingin menghapus data ini?')) return; try { const response = await simpleFetch(`${API_BASE_URL}/api/data/${id}`, { method: 'DELETE' }); if (!response.ok) { const err = await response.json(); throw new Error(err.detail); } showToast("Data berhasil dihapus."); refreshHistoryData(vehicle); } catch (error) { showToast(`Error: ${error.message}`, true); } }
+        
+        function openDataModal(mode, record = null) {
+            if (!currentVehicle) { showToast("Pilih driver terlebih dahulu.", true); return; }
+            dataForm.reset(); document.getElementById('form-error').classList.add('hidden');
+            const groups = { fuel: 'modal-fuel-group', service: 'modal-service-group', load: 'modal-load-group' };
+            Object.values(groups).forEach(id => document.getElementById(id).style.display = 'none');
+            document.getElementById('driver-id-hidden').value = currentVehicle.id;
+            document.getElementById('vehicle-plate-hidden').value = currentVehicle.plate;
+            document.getElementById('fuel-type-hidden').value = currentVehicle.fuel_type;
+            if (mode === 'edit' && record) {
+                document.getElementById('modal-title').textContent = 'Edit Data';
+                document.getElementById('record-id').value = record.id;
+                document.getElementById('date').value = record.date;
+                Object.values(groups).forEach(id => document.getElementById(id).style.display = 'block');
+                ['kilometer', 'fuel_cost', 'service_cost', 'service_type', 'granit', 'keramik'].forEach(field => { document.getElementById(field).value = record[field]; });
+            } else {
+                document.getElementById('record-id').value = '';
+                document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                if (groups[mode]) { document.getElementById(groups[mode]).style.display = 'block'; }
+                const titles = { fuel: 'Tambah Data BBM & KM', service: 'Tambah Data Servis', load: 'Tambah Data Muatan' };
+                document.getElementById('modal-title').textContent = titles[mode] || 'Data Riwayat';
+            }
+            dataModal.classList.remove('invisible', 'opacity-0'); dataModal.querySelector('.modal').classList.add('is-visible');
+        }
+
+        function closeDataModal() { dataModal.classList.add('invisible', 'opacity-0'); dataModal.querySelector('.modal').classList.remove('is-visible'); }
+        
+        dataForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const recordId = document.getElementById('record-id').value;
+            const isUpdate = !!recordId;
+            const payload = {
+                driver_id: parseInt(document.getElementById('driver-id-hidden').value),
+                date: document.getElementById('date').value,
+                plate: document.getElementById('vehicle-plate-hidden').value,
+                fuel_cost: parseFloat(document.getElementById('fuel_cost').value) || 0,
+                kilometer: parseFloat(document.getElementById('kilometer').value) || 0,
+                fuel_type: document.getElementById('fuel-type-hidden').value,
+                granit: parseFloat(document.getElementById('granit').value) || 0,
+                keramik: parseFloat(document.getElementById('keramik').value) || 0,
+                service_type: document.getElementById('service_type').value || '',
+                service_cost: parseFloat(document.getElementById('service_cost').value) || 0,
+            };
+            const url = isUpdate ? `${API_BASE_URL}/api/data/${recordId}` : `${API_BASE_URL}/api/data`;
+            const method = isUpdate ? 'PUT' : 'POST';
+            try {
+                const response = await simpleFetch(url, { method: method, body: JSON.stringify(payload) });
+                if (!response.ok) { const err = await response.json(); throw new Error(err.detail); }
+                closeDataModal(); showToast(`Data berhasil disimpan.`); refreshHistoryData(currentVehicle);
+            } catch (error) { document.getElementById('form-error').textContent = error.message; document.getElementById('form-error').classList.remove('hidden'); }
+        });
+
+        function createDriverRow(vehicle = {}) {
+            return `
+                <div class="p-3 border rounded-md grid grid-cols-12 gap-3 items-center" style="border-color: var(--panel-border);" data-id="${vehicle.id || ''}">
+                    <div class="col-span-3">
+                        <label class="text-sm font-medium">Nama</label>
+                        <input type="text" value="${vehicle.name || ''}" class="driver-name-input mt-1 block w-full px-2 py-1 shadow-sm">
+                    </div>
+                    <div class="col-span-3">
+                        <label class="text-sm font-medium">Plat</label>
+                        <input type="text" value="${vehicle.plate || ''}" class="driver-plate-input mt-1 block w-full px-2 py-1 shadow-sm">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="text-sm font-medium">Jenis</label>
+                        <input type="text" value="${vehicle.Jenis || ''}" class="driver-jenis-input mt-1 block w-full px-2 py-1 shadow-sm">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="text-sm font-medium">BBM</label>
+                        <input type="text" value="${vehicle.fuel_type || ''}" class="driver-fuel-input mt-1 block w-full px-2 py-1 shadow-sm">
+                    </div>
+                    <div class="col-span-2 flex items-end h-full">
+                        <button type="button" onclick="this.parentElement.parentElement.remove()" class="btn btn-danger w-full">Hapus</button>
+                    </div>
+                </div>
+            `;
+        }
+        function openDriverModal() { driverListContainer.innerHTML = ''; allVehicles.forEach(v => { driverListContainer.insertAdjacentHTML('beforeend', createDriverRow(v)); }); driverModal.classList.remove('invisible', 'opacity-0'); driverModal.querySelector('.modal').classList.add('is-visible'); }
+        function closeDriverModal() { driverModal.classList.add('invisible', 'opacity-0'); driverModal.querySelector('.modal').classList.remove('is-visible'); }
+        
+        driverForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('driver-form-submit-btn');
+            submitBtn.disabled = true; submitBtn.textContent = 'Menyimpan...';
+            const driverRows = driverListContainer.children;
+            const updatedDrivers = [];
+            for(let i = 0; i < driverRows.length; i++) {
+                const row = driverRows[i]; const plateInput = row.querySelector('.driver-plate-input');
+                if (plateInput && plateInput.value.trim() !== '') {
+                    updatedDrivers.push({
+                        id: row.dataset.id ? parseInt(row.dataset.id) : null,
+                        name: row.querySelector('.driver-name-input').value,
+                        plate: plateInput.value.trim(),
+                        Jenis: row.querySelector('.driver-jenis-input').value,
+                        fuel_type: row.querySelector('.driver-fuel-input').value,
+                    });
+                }
+            }
+            try {
+                const response = await simpleFetch(`${API_BASE_URL}/api/vehicles/update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedDrivers) });
+                if (!response.ok) { const err = await response.json(); throw new Error(err.detail); }
+                const result = await response.json();
+                showToast(result.detail);
+                const activeId = currentVehicle ? currentVehicle.id : null;
+                allVehicles = await (await simpleFetch(`${API_BASE_URL}/api/vehicles`)).json().then(data => data.vehicles);
+                renderVehicleTabs();
+                closeDriverModal();
+                if (activeId) { const newActiveTab = document.querySelector(`.vehicle-tab[data-id="${activeId}"]`); if (newActiveTab) { newActiveTab.click(); } else if (allVehicles.length > 0) { document.querySelector('.vehicle-tab').click(); } }
+                else if (allVehicles.length > 0) { document.querySelector('.vehicle-tab').click(); }
+            } catch (error) { const formError = document.getElementById('driver-form-error'); formError.textContent = `Error: ${error.message}`; formError.classList.remove('hidden');
+            } finally { submitBtn.disabled = false; submitBtn.textContent = 'Simpan Perubahan'; }
+        });
+        
+        async function createBackup() { if (!confirm("Anda yakin ingin membuat file backup database baru?")) return; try { const response = await simpleFetch(`${API_BASE_URL}/api/admin/backup`, { method: 'POST' }); const result = await response.json(); if (!response.ok) throw new Error(result.detail); showToast("Backup berhasil dibuat!"); } catch (error) { showToast(`Error: ${error.message}`, true); } }
+        async function exportData(vehicle) { if (!vehicle) { showToast("Pilih driver terlebih dahulu.", true); return; } const startDate = document.getElementById('start_date').value; const endDate = document.getElementById('end_date').value; let url = `${API_BASE_URL}/api/drivers/${vehicle.id}/export?`; if (startDate) url += `start_date=${startDate}&`; if (endDate) url += `end_date=${endDate}&`; showToast("Mempersiapkan file export..."); try { const response = await simpleFetch(url); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.detail); } const blob = await response.blob(); const downloadUrl = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = downloadUrl; const contentDisposition = response.headers.get('content-disposition'); let fileName = `export_${vehicle.plate}.xlsx`; if (contentDisposition) { const fileNameMatch = contentDisposition.match(/filename="(.+)"/); if (fileNameMatch && fileNameMatch.length === 2) fileName = fileNameMatch[1]; } a.download = fileName; document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(downloadUrl); } catch (error) { showToast(`Gagal export: ${error.message}`, true); } }
+        async function exportAllData() { const startDate = document.getElementById('start_date')?.value; const endDate = document.getElementById('end_date')?.value; let url = `${API_BASE_URL}/api/export/all?`; if (startDate) url += `start_date=${startDate}&`; if (endDate) url += `end_date=${endDate}&`; showToast("Mempersiapkan file export untuk semua driver..."); try { const response = await simpleFetch(url); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.detail); } const blob = await response.blob(); const downloadUrl = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = downloadUrl; const contentDisposition = response.headers.get('content-disposition'); let fileName = `export_semua_driver.xlsx`; if (contentDisposition) { const fileNameMatch = contentDisposition.match(/filename="(.+)"/); if (fileNameMatch && fileNameMatch.length === 2) fileName = fileNameMatch[1]; } a.download = fileName; document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(downloadUrl); } catch (error) { showToast(`Gagal export: ${error.message}`, true); } }
+        function openRestoreModal() { const modal = document.getElementById('restore-modal'); modal.classList.remove('invisible', 'opacity-0'); modal.querySelector('.modal').classList.add('is-visible'); }
+        function closeRestoreModal() { document.getElementById('restore-modal').classList.add('invisible', 'opacity-0'); document.getElementById('restore-modal').querySelector('.modal').classList.remove('is-visible'); document.getElementById('restore-error').classList.add('hidden'); document.getElementById('backup-file-input').value = ''; }
+        
+        function initializeApp() {
+            mainDashboard.innerHTML = `<header class="mb-6 p-4 panel flex justify-between items-center"><div class="flex items-center space-x-4"><img src="NEO LOGO.png" alt="Logo Neo Grosir" class="h-16 w-16 object-contain"><div><h1 class="text-lg font-bold uppercase tracking-wide">Neo Grosir Madiun</h1><p class="text-sm text-[var(--text-color-secondary)]">Data Kendaraan Operasional</p></div></div><div id="admin-menu-container" class="flex items-center gap-2"><div class="relative" id="export-dropdown-container"><button id="export-dropdown-btn" class="btn btn-secondary uppercase">Export</button><div id="export-dropdown-menu" class="dropdown-menu hidden"><button id="export-btn" class="dropdown-item">Export Driver Saat Ini</button><button id="export-all-btn" class="dropdown-item">Export Semua Driver</button></div></div><div class="relative" id="data-mgmt-dropdown-container"><button id="data-mgmt-dropdown-btn" class="btn btn-secondary uppercase">Data Management</button><div id="data-mgmt-dropdown-menu" class="dropdown-menu hidden"><button id="edit-driver-btn" class="dropdown-item">Edit Driver</button><button id="backup-btn" class="dropdown-item">Buat Backup</button><button id="restore-btn" class="dropdown-item">Restore Database</button></div></div><div class="btn-input-group rounded-md border"><span class="text-sm font-semibold pl-2 pr-1 text-[var(--text-color-secondary)]">Input Baru:</span><button id="add-fuel-btn" class="btn btn-primary" title="Tambah Riwayat BBM & Kilometer">BBM</button><button id="add-service-btn" class="btn btn-primary" title="Tambah Riwayat Servis">Servis</button><button id="add-load-btn" class="btn btn-primary" title="Tambah Riwayat Muatan">Muatan</button></div><div class="flex items-center gap-1 p-1 rounded-md border" style="border-color: var(--panel-border);"><button id="theme-light-btn" class="theme-toggle-btn"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg></button><button id="theme-dark-btn" class="theme-toggle-btn"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg></button><button id="theme-pastel-btn" class="theme-toggle-btn font-bold text-sm">P</button></div></div></header><div id="dashboard-content"><div class="panel mb-6"><div id="vehicle-tabs" class="flex flex-wrap justify-center border-b" style="border-color: var(--panel-border);"><div id="loading-indicator" class="p-4 text-center w-full"><p class="text-zinc-500">Memuat data kendaraan...</p></div></div></div><div id="details-container"></div></div>`;
+            const htmlEl = document.documentElement;
+            const applyTheme = (theme) => { htmlEl.classList.remove('dark', 'theme-pastel'); if (theme === 'dark' || theme === 'theme-pastel') { htmlEl.classList.add(theme); } localStorage.setItem('theme', theme); };
+            const savedTheme = localStorage.getItem('theme') || 'light'; applyTheme(savedTheme);
+            document.getElementById('theme-light-btn').addEventListener('click', () => applyTheme('light')); document.getElementById('theme-dark-btn').addEventListener('click', () => applyTheme('dark')); document.getElementById('theme-pastel-btn').addEventListener('click', () => applyTheme('theme-pastel'));
+            const setupDropdown = (btnId, menuId) => { const btn = document.getElementById(btnId); const menu = document.getElementById(menuId); btn.addEventListener('click', (event) => { event.stopPropagation(); document.querySelectorAll('.dropdown-menu').forEach(m => { if (m.id !== menuId) m.classList.add('hidden'); }); menu.classList.toggle('hidden'); }); };
+            setupDropdown('export-dropdown-btn', 'export-dropdown-menu'); setupDropdown('data-mgmt-dropdown-btn', 'data-mgmt-dropdown-menu');
+            window.addEventListener('click', () => { document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.add('hidden')); });
+            document.getElementById('add-driver-row-btn').addEventListener('click', () => { driverListContainer.insertAdjacentHTML('beforeend', createDriverRow({})); });
+            document.getElementById('driver-modal-close-btn').addEventListener('click', closeDriverModal); document.getElementById('driver-modal-cancel-btn').addEventListener('click', closeDriverModal);
+            document.getElementById('restore-modal-close-btn').addEventListener('click', closeRestoreModal); document.getElementById('restore-cancel-btn').addEventListener('click', closeRestoreModal);
+            document.getElementById('modal-close-btn').addEventListener('click', closeDataModal);
+            document.getElementById('add-fuel-btn').addEventListener('click', () => openDataModal('fuel')); document.getElementById('add-service-btn').addEventListener('click', () => openDataModal('service')); document.getElementById('add-load-btn').addEventListener('click', () => openDataModal('load'));
+            document.getElementById('export-btn').addEventListener('click', () => exportData(currentVehicle));
+            document.getElementById('export-all-btn').addEventListener('click', exportAllData);
+            document.getElementById('edit-driver-btn').addEventListener('click', openDriverModal);
+            document.getElementById('backup-btn').addEventListener('click', createBackup);
+            document.getElementById('restore-btn').addEventListener('click', openRestoreModal);
+            fetchVehicles();
+        }
+        initializeApp();
+    });
+    </script>
+</body>
+</html>
